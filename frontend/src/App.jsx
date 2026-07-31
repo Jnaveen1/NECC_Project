@@ -10,7 +10,7 @@ import CustomAnalysis from './pages/CustomAnalysis';
 import { fetchDailyPrices, fetchLocations, fetchMarketAnalysis, fetchMonthlySummary, fetchSummary, fetchYearlySummary, getRuntimeConfig } from './services/api';
 
 const pageMeta = {
-  dashboard: ['Market dashboard', 'NECC egg price performance at a glance'],
+  dashboard: ['Market Dashboard', 'NECC egg price performance at a glance'],
   daily: ['Daily prices', 'Explore day-wise rates and changes'],
   monthly: ['Monthly report', 'Official monthly and yearly averages'],
   analysis: ['Custom analysis', 'Analyze any location and date range'],
