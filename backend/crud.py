@@ -1,7 +1,7 @@
 from sqlalchemy.dialects.mysql import insert
 
 from backend.database import SessionLocal
-from backend.models import EggPrice
+from backend.models import EggPrice , MonthlyRate
 
 
 

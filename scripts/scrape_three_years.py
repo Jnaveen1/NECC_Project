@@ -1,4 +1,10 @@
+import os
+import sys
 from datetime import date
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from backend.crud import save_egg_prices
 from backend.scraper import scrape_month_prices
