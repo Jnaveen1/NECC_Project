@@ -6,17 +6,33 @@ from sqlalchemy import distinct
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import EggPrice
-
+from backend.models import EggPrice, MonthlyRate
 
 app = FastAPI(
     title="NECC Egg Price API",
-    version="1.0.0",
+    version="1.1.0",
 )
+
+MONTH_COLUMNS = (
+    (1, "January", MonthlyRate.jan),
+    (2, "February", MonthlyRate.feb),
+    (3, "March", MonthlyRate.mar),
+    (4, "April", MonthlyRate.apr),
+    (5, "May", MonthlyRate.may),
+    (6, "June", MonthlyRate.jun),
+    (7, "July", MonthlyRate.jul),
+    (8, "August", MonthlyRate.aug),
+    (9, "September", MonthlyRate.sep),
+    (10, "October", MonthlyRate.oct),
+    (11, "November", MonthlyRate.nov),
+    (12, "December", MonthlyRate.dec),
+)
+
 
 @app.get("/ping")
 def ping():
     return {"message": "pong"}
+
 
 @app.get("/")
 def home():
@@ -25,15 +41,16 @@ def home():
 
 @app.get("/api/locations")
 def get_locations(db: Session = Depends(get_db)):
-    locations = (
-        db.query(distinct(EggPrice.location))
-        .order_by(EggPrice.location)
-        .all()
+    daily_locations = db.query(distinct(EggPrice.location)).all()
+    monthly_locations = db.query(distinct(MonthlyRate.location)).all()
+
+    locations = sorted(
+        {row[0] for row in daily_locations + monthly_locations if row[0]}
     )
 
     return {
         "total": len(locations),
-        "locations": [location[0] for location in locations],
+        "locations": locations,
     }
 
 
@@ -44,9 +61,7 @@ def get_prices(
     end_date: date | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    query = db.query(EggPrice).filter(
-        EggPrice.location == location
-    )
+    query = db.query(EggPrice).filter(EggPrice.location == location)
 
     if start_date:
         query = query.filter(EggPrice.price_date >= start_date)
@@ -57,14 +72,11 @@ def get_prices(
     records = query.order_by(EggPrice.price_date).all()
 
     if not records:
-        raise HTTPException(
-            status_code=404,
-            detail="No price records found",
-        )
+        raise HTTPException(status_code=404, detail="No price records found")
 
     prices = [
         {
-            "date": record.price_date,
+            "date": record.price_date.isoformat(),
             "price": float(record.price),
         }
         for record in records
@@ -76,96 +88,101 @@ def get_prices(
         "prices": prices,
     }
 
+
 @app.get("/api/prices/monthly-summary")
 def get_monthly_summary(
     location: str = Query(...),
     year: int = Query(...),
     db: Session = Depends(get_db),
 ):
-    records = (
-        db.query(
-            extract("month", EggPrice.price_date).label("month"),
-            func.avg(EggPrice.price).label("average_price"),
-            func.min(EggPrice.price).label("minimum_price"),
-            func.max(EggPrice.price).label("maximum_price"),
-        )
+    """Return official monthly averages from the NECC Monthly Average Sheet."""
+    record = (
+        db.query(MonthlyRate)
         .filter(
-            EggPrice.location == location,
-            extract("year", EggPrice.price_date) == year,
+            MonthlyRate.location == location,
+            MonthlyRate.year == year,
         )
-        .group_by(extract("month", EggPrice.price_date))
-        .order_by(extract("month", EggPrice.price_date))
-        .all()
+        .first()
     )
 
-    if not records:
+    if not record:
         raise HTTPException(
             status_code=404,
-            detail="No monthly data found",
+            detail="No official monthly average data found",
         )
 
     monthly_data = []
 
-    for record in records:
+    for month_number, month_name, column in MONTH_COLUMNS:
+        value = getattr(record, column.key)
+        if value is None:
+            continue
+
         monthly_data.append(
             {
-                "month": int(record.month),
-                "average_price": round(float(record.average_price), 2),
-                "minimum_price": float(record.minimum_price),
-                "maximum_price": float(record.maximum_price),
+                "month": month_number,
+                "month_name": month_name,
+                "average_price": float(value),
             }
         )
 
     return {
         "location": location,
         "year": year,
+        "source_type": "official_monthly_average_sheet",
         "total_months": len(monthly_data),
         "monthly_data": monthly_data,
+        "year_average": (
+            float(record.year_average)
+            if record.year_average is not None
+            else None
+        ),
     }
+
 
 @app.get("/api/prices/yearly-summary")
 def get_yearly_summary(
     location: str = Query(...),
     db: Session = Depends(get_db),
 ):
+    """Return official yearly averages stored in Monthly Average Sheet rows."""
     records = (
-        db.query(
-            extract("year", EggPrice.price_date).label("year"),
-            func.avg(EggPrice.price).label("average_price"),
-            func.min(EggPrice.price).label("minimum_price"),
-            func.max(EggPrice.price).label("maximum_price"),
-            func.count(EggPrice.id).label("total_records"),
-        )
-        .filter(EggPrice.location == location)
-        .group_by(extract("year", EggPrice.price_date))
-        .order_by(extract("year", EggPrice.price_date))
+        db.query(MonthlyRate)
+        .filter(MonthlyRate.location == location)
+        .order_by(MonthlyRate.year)
         .all()
     )
 
     if not records:
         raise HTTPException(
             status_code=404,
-            detail="No yearly data found",
+            detail="No official yearly average data found",
         )
 
-    yearly_data = []
-
-    for record in records:
-        yearly_data.append(
-            {
-                "year": int(record.year),
-                "average_price": round(float(record.average_price), 2),
-                "minimum_price": float(record.minimum_price),
-                "maximum_price": float(record.maximum_price),
-                "total_records": record.total_records,
-            }
-        )
+    yearly_data = [
+        {
+            "year": record.year,
+            "average_price": (
+                float(record.year_average)
+                if record.year_average is not None
+                else None
+            ),
+            "available_months": sum(
+                1
+                for _, _, column in MONTH_COLUMNS
+                if getattr(record, column.key) is not None
+            ),
+        }
+        for record in records
+    ]
 
     return {
         "location": location,
+        "source_type": "official_monthly_average_sheet",
         "total_years": len(yearly_data),
         "yearly_data": yearly_data,
     }
+
 
 @app.get("/api/prices/daily")
 def get_daily_prices(
@@ -197,15 +214,13 @@ def get_daily_prices(
             detail="No daily price data found",
         )
 
-    prices = []
-
-    for record in records:
-        prices.append(
-            {
-                "date": record.price_date.isoformat(),
-                "price": float(record.price),
-            }
-        )
+    prices = [
+        {
+            "date": record.price_date.isoformat(),
+            "price": float(record.price),
+        }
+        for record in records
+    ]
 
     return {
         "location": location,
@@ -215,6 +230,7 @@ def get_daily_prices(
         "prices": prices,
     }
 
+
 @app.get("/api/prices/summary")
 def get_price_summary(
     location: str = Query(...),
@@ -222,6 +238,7 @@ def get_price_summary(
     end_date: date = Query(...),
     db: Session = Depends(get_db),
 ):
+    """Calculate analysis for any custom date range from daily prices."""
     if start_date > end_date:
         raise HTTPException(
             status_code=400,
@@ -255,15 +272,13 @@ def get_price_summary(
     )
 
     if not latest_record:
-        raise HTTPException(
-            status_code=404,
-            detail="No price data found",
-        )
+        raise HTTPException(status_code=404, detail="No price data found")
 
     return {
         "location": location,
         "start_date": start_date,
         "end_date": end_date,
+        "source_type": "calculated_from_daily_rates",
         "current_price": float(latest_record.price),
         "current_date": latest_record.price_date.isoformat(),
         "average_price": round(float(summary.average_price), 2),
