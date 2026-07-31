@@ -35,6 +35,23 @@ export async function fetchSummary({ location, startDate, endDate }) {
   return data;
 }
 
+export async function fetchMarketAnalysis({ location, startDate, endDate }) {
+  if (useMock) {
+    return {
+      analysis: 'This is a mock analysis. Real market reasoning becomes available when live data is enabled.',
+      source: 'mock',
+      location,
+      start_date: startDate,
+      end_date: endDate,
+    };
+  }
+
+  const { data } = await client.get('/api/analysis/market', {
+    params: { location, start_date: startDate, end_date: endDate },
+  });
+  return data;
+}
+
 export async function fetchMonthlySummary({ location, year }) {
   if (useMock) {
     return monthlyFromDaily(buildDailyData(location, `${year}-01-01`, `${year}-12-31`));
@@ -48,6 +65,23 @@ export async function fetchMonthlySummary({ location, year }) {
     .map((key, index) => ({ month: index + 1, average_price: record[key] }))
     .filter((item) => item.average_price !== null && item.average_price !== undefined)
     .map((item) => ({ ...item, average_price: Number(item.average_price) }));
+}
+
+export async function fetchMonthlyMarketAnalysis({ location, year }) {
+  if (useMock) {
+    return {
+      analysis: 'This is a mock monthly explanation. Connect the real backend to see the full seasonal comparison.',
+      source: 'mock',
+      focus_month: 'Current month',
+      annual_average: 0,
+      difference_from_average: 0,
+    };
+  }
+
+  const { data } = await client.get('/api/analysis/monthly', {
+    params: { location, year },
+  });
+  return data;
 }
 
 export async function fetchYearlySummary({ location }) {

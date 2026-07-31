@@ -5,7 +5,7 @@ import SummaryCard from '../components/SummaryCard';
 
 const money = (value) => value == null ? '—' : `₹${Number(value).toFixed(2)}`;
 
-export default function Dashboard({ locations, filters, onFilterChange, onApply, summary, daily, loading }) {
+export default function Dashboard({ locations, filters, onFilterChange, onApply, summary, daily, loading, marketInsight, insightLoading }) {
   const previous = daily.length > 1 ? Number(daily[daily.length - 2].price) : null;
   const current = summary?.current_price;
   const change = previous == null || current == null ? 0 : current - previous;
@@ -22,6 +22,10 @@ export default function Dashboard({ locations, filters, onFilterChange, onApply,
       <section className="panel">
         <div className="panel-head"><div><h2>Price trend</h2><p>Daily NECC price movement for {filters.location}</p></div><span className="range-chip">{filters.startDate} → {filters.endDate}</span></div>
         {loading ? <div className="skeleton chart-skeleton" /> : <PriceChart data={daily} />}
+        <div className="analysis-note">
+          <strong>Market insight</strong>
+          {insightLoading ? <p>Analyzing market conditions...</p> : <p>{marketInsight?.analysis || 'No insight available for this range.'}</p>}
+        </div>
       </section>
     </>
   );

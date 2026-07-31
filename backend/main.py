@@ -6,8 +6,13 @@ from sqlalchemy import extract, func
 from sqlalchemy import distinct
 from sqlalchemy.orm import Session
 
+from backend.ai_analysis import generate_market_analysis, generate_monthly_market_analysis
 from backend.database import get_db
 from backend.models import EggPrice, MonthlyRate
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(
     title="NECC Egg Price API",
@@ -300,3 +305,132 @@ def get_price_summary(
         "maximum_price": float(summary.maximum_price),
         "total_records": summary.total_records,
     }
+
+
+@app.get("/api/analysis/monthly")
+def get_monthly_market_analysis(
+    location: str = Query(...),
+    year: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Explain why a monthly average stands out relative to the rest of the year."""
+    record = (
+        db.query(MonthlyRate)
+        .filter(MonthlyRate.location == location, MonthlyRate.year == year)
+        .first()
+    )
+
+    if not record:
+        raise HTTPException(status_code=404, detail="No monthly market summary found")
+
+    month_values = []
+    for month_number, _, column in MONTH_COLUMNS:
+        value = getattr(record, column.key)
+        if value is None:
+            continue
+        month_values.append({
+            "month": month_number,
+            "month_name": MONTH_COLUMNS[month_number - 1][1],
+            "average_price": float(value),
+        })
+
+    annual_average = float(record.year_average) if record.year_average is not None else sum(item["average_price"] for item in month_values) / len(month_values) if month_values else 0
+    focus_month = max(month_values, key=lambda item: item["average_price"]) if month_values else None
+    focus_month_name = focus_month["month_name"] if focus_month else "this month"
+    focus_value = float(focus_month["average_price"]) if focus_month else 0
+    delta = focus_value - annual_average if annual_average else 0
+    likely_reason = "festival demand, school reopening, and local supply variation"
+
+    if focus_month_name in {"June", "July", "August"}:
+        likely_reason = "school reopening, hostel demand, and monsoon logistics pressure"
+    elif focus_month_name in {"October", "November", "December"}:
+        likely_reason = "festival and wedding-season demand"
+    elif focus_month_name in {"January", "February"}:
+        likely_reason = "post-holiday and winter consumption"
+    elif focus_month_name in {"March", "April", "May"}:
+        likely_reason = "summer demand and supply tightening"
+
+    analysis_payload = {
+        "location": location,
+        "year": year,
+        "focus_month": focus_month_name,
+        "focus_value": focus_value,
+        "annual_average": annual_average,
+        "focus_delta": delta,
+        "months": month_values,
+        "likely_reason": likely_reason,
+    }
+    result = generate_monthly_market_analysis(analysis_payload)
+
+    return {
+        "location": location,
+        "year": year,
+        "focus_month": focus_month_name,
+        "focus_value": focus_value,
+        "annual_average": annual_average,
+        "difference_from_average": round(delta, 2),
+        "analysis": result["analysis"],
+        "source": result["source"],
+    }
+
+
+@app.get("/api/analysis/market")
+def get_market_analysis(
+    location: str = Query(...),
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Generate a market explanation for the selected price range."""
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400,
+            detail="start_date cannot be greater than end_date",
+        )
+
+    records = (
+        db.query(EggPrice)
+        .filter(
+            EggPrice.location == location,
+            EggPrice.price_date >= start_date,
+            EggPrice.price_date <= end_date,
+        )
+        .order_by(EggPrice.price_date)
+        .all()
+    )
+
+    if not records:
+        raise HTTPException(status_code=404, detail="No price data found for analysis")
+
+    start_price = float(records[0].price)
+    end_price = float(records[-1].price)
+    change = end_price - start_price
+    percentage_change = ((change / start_price) * 100) if start_price else 0
+    trend = "rising" if change >= 0 else "falling"
+
+    analysis_data = {
+        "location": location,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "trend": trend,
+        "percentage_change": round(percentage_change, 2),
+        "start_price": round(start_price, 2),
+        "end_price": round(end_price, 2),
+    }
+    analysis_result = generate_market_analysis(analysis_data)
+
+    return {
+        "location": location,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "trend": trend,
+        "percentage_change": round(percentage_change, 2),
+        "start_price": round(start_price, 2),
+        "end_price": round(end_price, 2),
+        "analysis": analysis_result["analysis"],
+        "source": analysis_result["source"],
+    }
+
+
+
+
