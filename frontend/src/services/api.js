@@ -21,10 +21,16 @@ export async function fetchLocations() {
 
 export async function fetchDailyPrices({ location, startDate, endDate }) {
   if (useMock) return buildDailyData(location, startDate, endDate);
-  const { data } = await client.get('/api/prices/daily', {
-    params: { location, start_date: startDate, end_date: endDate },
-  });
-  return (data.prices || []).map((row) => ({ date: toDateString(row.date), price: Number(row.price) }));
+
+  try {
+    const { data } = await client.get('/api/prices/daily', {
+      params: { location, start_date: startDate, end_date: endDate },
+    });
+    return (data.prices || []).map((row) => ({ date: toDateString(row.date), price: Number(row.price) }));
+  } catch (error) {
+    if (error.response?.status === 404) return [];
+    throw error;
+  }
 }
 
 export async function fetchSummary({ location, startDate, endDate }) {
@@ -56,15 +62,21 @@ export async function fetchMonthlySummary({ location, year }) {
   if (useMock) {
     return monthlyFromDaily(buildDailyData(location, `${year}-01-01`, `${year}-12-31`));
   }
-  const { data } = await client.get('/api/prices/monthly-summary', { params: { location, year } });
-  if (Array.isArray(data.monthly_data)) return data.monthly_data;
 
-  const monthKeys = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-  const record = data.data || data.monthly_rate || data;
-  return monthKeys
-    .map((key, index) => ({ month: index + 1, average_price: record[key] }))
-    .filter((item) => item.average_price !== null && item.average_price !== undefined)
-    .map((item) => ({ ...item, average_price: Number(item.average_price) }));
+  try {
+    const { data } = await client.get('/api/prices/monthly-summary', { params: { location, year } });
+    if (Array.isArray(data.monthly_data)) return data.monthly_data;
+
+    const monthKeys = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const record = data.data || data.monthly_rate || data;
+    return monthKeys
+      .map((key, index) => ({ month: index + 1, average_price: record[key] }))
+      .filter((item) => item.average_price !== null && item.average_price !== undefined)
+      .map((item) => ({ ...item, average_price: Number(item.average_price) }));
+  } catch (error) {
+    if (error.response?.status === 404) return [];
+    throw error;
+  }
 }
 
 export async function fetchMonthlyMarketAnalysis({ location, year }) {

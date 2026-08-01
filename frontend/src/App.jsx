@@ -20,7 +20,15 @@ export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
   const [locations, setLocations] = useState(['Ahmedabad']);
-  const [filters, setFilters] = useState({ location: 'Ahmedabad', startDate: '2026-01-01', endDate: '2026-07-31' });
+  const [filters, setFilters] = useState({
+    location: 'Ahmedabad',
+    startDate: '2026-01-01',
+    endDate: '2026-07-31',
+    month: 1,
+    year: 2026,
+    viewMode: 'daily',
+  });
+  const [activeFilterMode, setActiveFilterMode] = useState('monthyear');
   const [applied, setApplied] = useState(filters);
   const [daily, setDaily] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -73,7 +81,33 @@ export default function App() {
   useEffect(() => { loadMarketInsight(applied); }, [applied, loadMarketInsight]);
 
   const onFilterChange = (key, value) => setFilters((old) => ({ ...old, [key]: value }));
-  const onApply = () => { setApplied(filters); loadRange(filters); loadMarketInsight(filters); };
+
+  const applyMonthYearFilter = () => {
+    const computedFilters = {
+      ...filters,
+      startDate: filters.viewMode === 'monthly'
+        ? `${filters.year}-01-01`
+        : new Date(filters.year, filters.month - 1, 1).toISOString().slice(0, 10),
+      endDate: filters.viewMode === 'monthly'
+        ? `${filters.year}-12-31`
+        : new Date(filters.year, filters.month, 0).toISOString().slice(0, 10),
+    };
+
+    setActiveFilterMode('monthyear');
+    setFilters((old) => ({ ...old, ...computedFilters }));
+    setApplied(computedFilters);
+    loadRange(computedFilters);
+    loadMarketInsight(computedFilters);
+  };
+
+  const applyDateRangeFilter = () => {
+    setActiveFilterMode('date-range');
+    setApplied(filters);
+    loadRange(filters);
+    loadMarketInsight(filters);
+  };
+
+  const onApply = () => applyDateRangeFilter();
   const onRefresh = () => { loadRange(applied); loadMarketInsight(applied); if (activePage === 'monthly') loadReports(filters.location, reportYear); };
   const [title, subtitle] = pageMeta[activePage];
 
@@ -84,7 +118,17 @@ export default function App() {
         <Topbar title={title} subtitle={subtitle} config={config} onRefresh={onRefresh} refreshing={loading} />
         {error && <div className="error-banner">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
         {activePage === 'dashboard' && <Dashboard locations={locations} filters={filters} onFilterChange={onFilterChange} onApply={onApply} summary={summary} daily={daily} loading={loading} marketInsight={marketInsight} insightLoading={insightLoading} />}
-        {activePage === 'daily' && <DailyPrices locations={locations} filters={filters} onFilterChange={onFilterChange} onApply={onApply} daily={daily} />}
+        {activePage === 'daily' && (
+          <DailyPrices
+            locations={locations}
+            filters={filters}
+            activeFilterMode={activeFilterMode}
+            onFilterChange={onFilterChange}
+            onApplyMonthYear={applyMonthYearFilter}
+            onApplyDateRange={applyDateRangeFilter}
+            daily={daily}
+          />
+        )}
         {activePage === 'monthly' && <MonthlyReport locations={locations} location={filters.location} year={reportYear} onLocation={(location) => setFilters((old) => ({ ...old, location }))} onYear={setReportYear} monthly={monthly} yearly={yearly} />}
         {activePage === 'analysis' && <CustomAnalysis locations={locations} filters={filters} onFilterChange={onFilterChange} onApply={onApply} summary={summary} daily={daily} marketInsight={marketInsight} insightLoading={insightLoading} />}
       </main>

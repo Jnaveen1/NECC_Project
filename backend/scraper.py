@@ -134,7 +134,6 @@ def _parse_price(value: str) -> float | None:
         return None
 
 
-
 def scrape_month_prices(month: int, year: int) -> list[dict]:
     html = fetch_month_page(month, year)
     soup = BeautifulSoup(html, "lxml")
