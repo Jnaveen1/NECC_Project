@@ -19,10 +19,10 @@ export default function CustomAnalysis({ locations, filters, onFilterChange, onA
       <section className="panel">
         <div className="panel-head"><div><h2>Custom period analysis</h2><p>Calculated from daily records in the selected range</p></div></div>
         <PriceChart data={daily} />
-        <div className="analysis-note">
+        {/* <div className="analysis-note">
           <strong>Market insight</strong>
           {insightLoading ? <p>Analyzing market conditions...</p> : <p>{marketInsight?.analysis || 'No insight available for this range.'}</p>}
-        </div>
+        </div> */}
       </section>
     </>
   );

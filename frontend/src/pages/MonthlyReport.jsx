@@ -38,10 +38,10 @@ export default function MonthlyReport({ locations, location, year, onLocation, o
       <section className="panel">
         <div className="panel-head"><div><h2>Official monthly averages</h2><p>Monthly Average Sheet values for {location}</p></div></div>
         <MonthlyChart data={monthly} />
-        <div className="analysis-note">
+        {/* <div className="analysis-note">
           <strong>Monthly market insight</strong>
           {insightLoading ? <p>Comparing this month against the rest of the year...</p> : <p>{monthlyInsight?.analysis || 'No monthly insight available.'}</p>}
-        </div>
+        </div> */}
       </section>
       <section className="panel">
         <div className="panel-head"><div><h2>Monthly values</h2><p>Official average by month</p></div></div>

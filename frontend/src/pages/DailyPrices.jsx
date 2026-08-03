@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Filters from '../components/Filters';
+import Filters2 from '../components/Filters2';
+
 import PriceTable from '../components/PriceTable';
 import { fetchDailyPrices, fetchMonthlySummary } from '../services/api';
 
@@ -154,7 +156,7 @@ if (resolvedMode === 'date-range') {
 
   return (
     <>
-      <Filters
+    <Filters2
         locations={locations}
         values={filters}
         activeFilterMode={activeFilterMode}
@@ -163,6 +165,15 @@ if (resolvedMode === 'date-range') {
         onApplyDateRange={onApplyDateRange}
         compact
       />
+      {/* <Filters
+        locations={locations}
+        values={filters}
+        activeFilterMode={activeFilterMode}
+        onChange={onFilterChange}
+        onApplyMonthYear={onApplyMonthYear}
+        onApplyDateRange={onApplyDateRange}
+        compact
+      /> */}
       <section className="panel">
         <div className="panel-head">
           <div>

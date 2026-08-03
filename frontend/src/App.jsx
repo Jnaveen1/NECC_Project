@@ -16,14 +16,31 @@ const pageMeta = {
   analysis: ['Custom analysis', 'Analyze any location and date range'],
 };
 
+function getDefaultDateRange() {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const toIsoDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    startDate: toIsoDate(start),
+    endDate: toIsoDate(today),
+  };
+}
+
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
   const [locations, setLocations] = useState(['Ahmedabad']);
+  const defaultDateRange = useMemo(() => getDefaultDateRange(), []);
   const [filters, setFilters] = useState({
     location: 'Ahmedabad',
-    startDate: '2026-01-01',
-    endDate: '2026-07-31',
+    startDate: defaultDateRange.startDate,
+    endDate: defaultDateRange.endDate,
     month: 1,
     year: 2026,
     viewMode: 'daily',

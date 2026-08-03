@@ -7,7 +7,7 @@ const monthOptions = Array.from({ length: 12 }, (_, index) => ({
 
 const yearOptions = Array.from({ length: 8 }, (_, index) => 2020 + index);
 
-export default function Filters({
+export default function Filters2({
   locations,
   values,
   activeFilterMode,
@@ -22,7 +22,7 @@ export default function Filters({
 
   return (
     <>
-      {/* <section className={`filters-card ${compact ? 'compact' : ''} ${activeFilterMode && activeFilterMode !== 'monthyear' ? 'filter-disabled' : ''}`}>
+      <section className={`filters-card ${compact ? 'compact' : ''} ${activeFilterMode && activeFilterMode !== 'monthyear' ? 'filter-disabled' : ''}`}>
         <label>
           <span><CalendarDays size={15} /> Month</span>
           <select
@@ -79,45 +79,6 @@ export default function Filters({
 
         <div className="button-column">
           <button className="primary-button" onClick={handlePrimaryApply}><Search size={16} /> Apply</button>
-        </div>
-      </section> */}
-
-      <section className={`filters-card ${compact ? 'compact' : ''} ${activeFilterMode === 'monthyear' ? 'filter-disabled' : ''}`}>
-        <label>
-          <span><CalendarDays size={15} /> Location</span>
-          <select
-            value={values.location ?? ''}
-            onChange={(e) => onChange('location', e.target.value)}
-            disabled={!locations.length}
-          >
-            {locations.map((location) => (
-              <option key={location} value={location}>{location}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          <span><CalendarDays size={15} /> Start date</span>
-          <input
-            type="date"
-            value={values.startDate}
-            onChange={(e) => onChange('startDate', e.target.value)}
-            disabled={activeFilterMode === 'monthyear'}
-          />
-        </label>
-
-        <label>
-          <span><CalendarDays size={15} /> End date</span>
-          <input
-            type="date"
-            value={values.endDate}
-            onChange={(e) => onChange('endDate', e.target.value)}
-            disabled={activeFilterMode === 'monthyear'}
-          />
-        </label>
-
-        <div className="button-column">
-          <button className="primary-button" onClick={handleSecondaryApply}><Search size={16} /> Apply</button>
         </div>
       </section>
     </>
