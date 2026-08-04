@@ -62,7 +62,13 @@ export default function App() {
     setLoading(true); setError('');
     try {
       const [dailyRows, summaryData] = await Promise.all([fetchDailyPrices(params), fetchSummary(params)]);
-      setDaily(dailyRows); setSummary(summaryData);
+      const latestDaily = dailyRows[dailyRows.length - 1];
+      const normalizedSummary = summaryData && summaryData.current_price == null && latestDaily
+        ? { ...summaryData, current_price: Number(latestDaily.price), current_date: latestDaily.date }
+        : summaryData;
+
+      setDaily(dailyRows);
+      setSummary(normalizedSummary);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Unable to load price data.');
     } finally { setLoading(false); }
