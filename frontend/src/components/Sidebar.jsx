@@ -4,7 +4,7 @@ const items = [
   { id: 'dashboard', label: 'Dashboard', icon: Gauge },
   { id: 'daily', label: 'Daily Prices', icon: LineChart },
   { id: 'monthly', label: 'Monthly Report', icon: BarChart3 },
-  { id: 'analysis', label: 'Custom Analysis', icon: CalendarRange },
+  // { id: 'analysis', label: 'Custom Analysis', icon: CalendarRange },
 ];
 
 export default function Sidebar({ activePage, onNavigate, open, onToggle }) {

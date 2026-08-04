@@ -7,13 +7,13 @@ import Dashboard from './pages/Dashboard';
 import DailyPrices from './pages/DailyPrices';
 import MonthlyReport from './pages/MonthlyReport';
 import CustomAnalysis from './pages/CustomAnalysis';
-import { fetchDailyPrices, fetchLocations, fetchMarketAnalysis, fetchMonthlySummary, fetchSummary, fetchYearlySummary, getRuntimeConfig } from './services/api';
+import { fetchDailyPrices, fetchLocations, fetchMonthlySummary, fetchSummary, fetchYearlySummary, getRuntimeConfig } from './services/api';
 
 const pageMeta = {
   dashboard: ['Market Dashboard', 'NECC egg price performance at a glance'],
   daily: ['Daily prices', 'Explore day-wise rates and changes'],
   monthly: ['Monthly report', 'Official monthly and yearly averages'],
-  analysis: ['Custom analysis', 'Analyze any location and date range'],
+  // analysis: ['Custom analysis', 'Analyze any location and date range'],
 };
 
 function getDefaultDateRange() {
@@ -81,27 +81,27 @@ export default function App() {
     } catch (err) { setError(err.response?.data?.detail || err.message || 'Unable to load report data.'); }
   }, [filters.location, reportYear]);
 
-  const loadMarketInsight = useCallback(async (params = applied) => {
-    setInsightLoading(true);
-    try {
-      const insight = await fetchMarketAnalysis(params);
-      setMarketInsight(insight);
-    } catch (err) {
-      setMarketInsight({ analysis: 'Unable to load market insight for this selected period.', source: 'heuristic' });
-    } finally {
-      setInsightLoading(false);
-    }
-  }, [applied]);
+  // const loadMarketInsight = useCallback(async (params = applied) => {
+  //   setInsightLoading(true);
+  //   try {
+  //     const insight = await fetchMarketAnalysis(params);
+  //     setMarketInsight(insight);
+  //   } catch (err) {
+  //     setMarketInsight({ analysis: 'Unable to load market insight for this selected period.', source: 'heuristic' });
+  //   } finally {
+  //     setInsightLoading(false);
+  //   }
+  // }, [applied]);
 
   useEffect(() => {
     fetchLocations().then((items) => { if (items.length) { setLocations(items); setFilters((old) => ({ ...old, location: items.includes(old.location) ? old.location : items[0] })); } }).catch(() => {});
     loadRange(filters);
     loadReports(filters.location, reportYear);
-    loadMarketInsight(filters);
+    // loadMarketInsight(filters);
   }, []);
 
   useEffect(() => { if (activePage === 'monthly') loadReports(filters.location, reportYear); }, [activePage, filters.location, reportYear, loadReports]);
-  useEffect(() => { loadMarketInsight(applied); }, [applied, loadMarketInsight]);
+  // useEffect(() => { loadMarketInsight(applied); }, [applied, loadMarketInsight]);
 
   const onFilterChange = (key, value) => setFilters((old) => ({ ...old, [key]: value }));
 
@@ -120,14 +120,14 @@ export default function App() {
     setFilters((old) => ({ ...old, ...computedFilters }));
     setApplied(computedFilters);
     loadRange(computedFilters);
-    loadMarketInsight(computedFilters);
+    // loadMarketInsight(computedFilters);
   };
 
   const applyDateRangeFilter = () => {
     setActiveFilterMode('date-range');
     setApplied(filters);
     loadRange(filters);
-    loadMarketInsight(filters);
+    // loadMarketInsight(filters);
   };
 
   const onApply = () => applyDateRangeFilter();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchMonthlyMarketAnalysis } from '../services/api';
+// import { fetchMonthlyMarketAnalysis } from '../services/api';
 import MonthlyChart from '../components/MonthlyChart';
 
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -9,24 +9,24 @@ export default function MonthlyReport({ locations, location, year, onLocation, o
   const [monthlyInsight, setMonthlyInsight] = useState({ analysis: '', source: 'heuristic' });
   const [insightLoading, setInsightLoading] = useState(false);
 
-  useEffect(() => {
-    if (!location || !year || !monthly.length) return;
+  // useEffect(() => {
+  //   if (!location || !year || !monthly.length) return;
 
-    let active = true;
-    setInsightLoading(true);
-    fetchMonthlyMarketAnalysis({ location, year })
-      .then((result) => {
-        if (active) setMonthlyInsight(result);
-      })
-      .catch(() => {
-        if (active) setMonthlyInsight({ analysis: 'Unable to load monthly market insight for this year.', source: 'heuristic' });
-      })
-      .finally(() => {
-        if (active) setInsightLoading(false);
-      });
+  //   let active = true;
+  //   setInsightLoading(true);
+  //   fetchMonthlyMarketAnalysis({ location, year })
+  //     .then((result) => {
+  //       if (active) setMonthlyInsight(result);
+  //     })
+  //     .catch(() => {
+  //       if (active) setMonthlyInsight({ analysis: 'Unable to load monthly market insight for this year.', source: 'heuristic' });
+  //     })
+  //     .finally(() => {
+  //       if (active) setInsightLoading(false);
+  //     });
 
-    return () => { active = false; };
-  }, [location, year, monthly.length]);
+  //   return () => { active = false; };
+  // }, [location, year, monthly.length]);
 
   return (
     <>
