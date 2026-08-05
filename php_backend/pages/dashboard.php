@@ -113,11 +113,19 @@ $changeValue = $previousPrice !== null && $currentPrice !== null ? $currentPrice
 
             <section class="filters-panel">
                 <form method="GET" action="/dashboard" class="filters-grid">
+
                     <label>
                         <span>Location</span>
-                        <select name="location">
+
+                        <select
+                            name="location"
+                            onchange="this.form.submit()"
+                        >
                             <?php foreach ($locations as $item): ?>
-                                <option value="<?= htmlspecialchars($item) ?>" <?= $item === $location ? "selected" : "" ?>>
+                                <option
+                                    value="<?= htmlspecialchars($item) ?>"
+                                    <?= $item === $location ? "selected" : "" ?>
+                                >
                                     <?= htmlspecialchars($item) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -126,15 +134,26 @@ $changeValue = $previousPrice !== null && $currentPrice !== null ? $currentPrice
 
                     <label>
                         <span>Start date</span>
-                        <input type="date" name="start_date" value="<?= htmlspecialchars($startDate) ?>" />
+
+                        <input
+                            type="date"
+                            name="start_date"
+                            value="<?= htmlspecialchars($startDate) ?>"
+                            onchange="this.form.submit()"
+                        />
                     </label>
 
                     <label>
                         <span>End date</span>
-                        <input type="date" name="end_date" value="<?= htmlspecialchars($endDate) ?>" />
+
+                        <input
+                            type="date"
+                            name="end_date"
+                            value="<?= htmlspecialchars($endDate) ?>"
+                            onchange="this.form.submit()"
+                        />
                     </label>
 
-                    <button type="submit" class="primary-btn">Apply</button>
                 </form>
             </section>
 
@@ -172,7 +191,13 @@ $changeValue = $previousPrice !== null && $currentPrice !== null ? $currentPrice
                         </div>
                         <strong><?= formatCurrency($summary["minimum_price"]) ?></strong>
                         <div class="summary-foot">
-                            <small>Lowest recorded</small>
+                            <small>
+                                <?php if (!empty($summary["minimum_date"])): ?>
+                                    On <?= htmlspecialchars(formatDateForDisplay($summary["minimum_date"])) ?>
+                                <?php else: ?>
+                                    Lowest recorded
+                                <?php endif; ?>
+                            </small>
                         </div>
                     </article>
 
@@ -183,7 +208,13 @@ $changeValue = $previousPrice !== null && $currentPrice !== null ? $currentPrice
                         </div>
                         <strong><?= formatCurrency($summary["maximum_price"]) ?></strong>
                         <div class="summary-foot">
-                            <small>Highest recorded</small>
+                            <small>
+                                <?php if (!empty($summary["maximum_date"])): ?>
+                                    On <?= htmlspecialchars(formatDateForDisplay($summary["maximum_date"])) ?>
+                                <?php else: ?>
+                                    Highest recorded
+                                <?php endif; ?>
+                            </small>
                         </div>
                     </article>
 
@@ -212,5 +243,22 @@ $changeValue = $previousPrice !== null && $currentPrice !== null ? $currentPrice
             </section>
         </main>
     </div>
+    <script>
+        window.addEventListener("beforeunload", function () {
+            sessionStorage.setItem(
+                "scrollPosition",
+                window.scrollY
+            );
+        });
+
+        window.addEventListener("load", function () {
+            const y = sessionStorage.getItem("scrollPosition");
+
+            if (y !== null) {
+                window.scrollTo(0, parseInt(y));
+                sessionStorage.removeItem("scrollPosition");
+            }
+        });
+    </script>
 </body>
 </html>

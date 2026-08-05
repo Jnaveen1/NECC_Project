@@ -139,7 +139,7 @@ if ($view === "monthly") {
 
                     <span>Month</span>
 
-                    <select name="month">
+                    <select name="month"  onchange="this.form.submit()">
 
                         <?php foreach ($monthNames as $number => $name): ?>
 
@@ -162,7 +162,7 @@ if ($view === "monthly") {
 
                     <span>Year</span>
 
-                    <select name="year">
+                    <select name="year" onchange="this.form.submit()">
 
                         <?php foreach ($availableYears as $priceYear): ?>
 
@@ -196,6 +196,7 @@ if ($view === "monthly") {
                                 type="radio"
                                 name="view"
                                 value="daily"
+                                onchange="this.form.submit()"
                                 <?= $view === "daily"
                                     ? "checked"
                                     : "" ?>
@@ -213,6 +214,7 @@ if ($view === "monthly") {
                                 type="radio"
                                 name="view"
                                 value="monthly"
+                                onchange="this.form.submit()"
                                 <?= $view === "monthly"
                                     ? "checked"
                                     : "" ?>
@@ -224,13 +226,6 @@ if ($view === "monthly") {
                     </div>
 
                 </fieldset>
-
-                <button
-                    type="submit"
-                    class="primary-btn daily-apply-btn"
-                >
-                    Apply
-                </button>
 
             </form>
 
@@ -523,6 +518,23 @@ if ($view === "monthly") {
     </main>
 
 </div>
+    <script>
+    window.addEventListener("beforeunload", function () {
+        sessionStorage.setItem(
+            "scrollPosition",
+            window.scrollY
+        );
+    });
+
+    window.addEventListener("load", function () {
+        const y = sessionStorage.getItem("scrollPosition");
+
+        if (y !== null) {
+            window.scrollTo(0, parseInt(y));
+            sessionStorage.removeItem("scrollPosition");
+        }
+    });
+    </script>
 
 </body>
 </html>

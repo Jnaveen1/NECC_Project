@@ -24,6 +24,7 @@ function getPriceSummary(
     string $startDate,
     string $endDate
 ): ?array {
+
     $sql = "
         SELECT
             COUNT(*) AS total_records,
@@ -45,9 +46,15 @@ function getPriceSummary(
 
     $summary = $statement->fetch(PDO::FETCH_ASSOC);
 
-    if (!$summary || (int) $summary["total_records"] === 0) {
+    if (!$summary || (int)$summary["total_records"] === 0) {
         return null;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Current Price
+    |--------------------------------------------------------------------------
+    */
 
     $latestSql = "
         SELECT
@@ -70,12 +77,72 @@ function getPriceSummary(
 
     $latest = $latestStatement->fetch(PDO::FETCH_ASSOC);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Minimum Price
+    |--------------------------------------------------------------------------
+    */
+
+    $minimumSql = "
+        SELECT
+            price,
+            price_date
+        FROM egg_prices
+        WHERE location = :location
+          AND price_date BETWEEN :start_date AND :end_date
+        ORDER BY price ASC, price_date ASC
+        LIMIT 1
+    ";
+
+    $minimumStatement = $conn->prepare($minimumSql);
+
+    $minimumStatement->execute([
+        "location" => $location,
+        "start_date" => $startDate,
+        "end_date" => $endDate
+    ]);
+
+    $minimum = $minimumStatement->fetch(PDO::FETCH_ASSOC);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum Price
+    |--------------------------------------------------------------------------
+    */
+
+    $maximumSql = "
+        SELECT
+            price,
+            price_date
+        FROM egg_prices
+        WHERE location = :location
+          AND price_date BETWEEN :start_date AND :end_date
+        ORDER BY price DESC, price_date ASC
+        LIMIT 1
+    ";
+
+    $maximumStatement = $conn->prepare($maximumSql);
+
+    $maximumStatement->execute([
+        "location" => $location,
+        "start_date" => $startDate,
+        "end_date" => $endDate
+    ]);
+
+    $maximum = $maximumStatement->fetch(PDO::FETCH_ASSOC);
+
     return [
         "current_price" => $latest["current_price"] ?? null,
         "current_date" => $latest["latest_date"] ?? null,
+
         "average_price" => $summary["average_price"],
-        "minimum_price" => $summary["minimum_price"],
-        "maximum_price" => $summary["maximum_price"],
+
+        "minimum_price" => $minimum["price"] ?? null,
+        "minimum_date" => $minimum["price_date"] ?? null,
+
+        "maximum_price" => $maximum["price"] ?? null,
+        "maximum_date" => $maximum["price_date"] ?? null,
+
         "total_records" => $summary["total_records"]
     ];
 }
@@ -397,7 +464,6 @@ function getAvailablePriceYears(PDO $conn): array
         $statement->fetchAll(PDO::FETCH_COLUMN)
     );
 }
-
 
 function getDailyPriceMatrix(
     PDO $conn,
@@ -759,8 +825,10 @@ function buildMultiLineChart(
         class="chart-axis-line"
     />';
 
-    foreach ($series as $seriesIndex => $values) {
-        $color = $colors[$seriesIndex % count($colors)];
+    $lineIndex = 0;
+
+    foreach ($series as $year => $values) {
+        $color = $colors[$lineIndex % count($colors)];
 
         $segments = [];
         $currentSegment = [];
@@ -838,18 +906,20 @@ function buildMultiLineChart(
                 </circle>';
             }
         }
+
+        $lineIndex++;
     }
 
     $svg .= '</svg>';
 
     $svg .= '<div class="chart-legend">';
 
-    foreach ($series as $seriesIndex => $values) {
-        $color = $colors[$seriesIndex % count($colors)];
+    $legendIndex = 0;
 
-        $seriesName = is_string($seriesIndex)
-            ? $seriesIndex
-            : "Series " . ($seriesIndex + 1);
+    foreach ($series as $year => $values) {
+        $color = $colors[
+            $legendIndex % count($colors)
+        ];
 
         $svg .= '<span class="legend-item">
             <span
@@ -858,10 +928,12 @@ function buildMultiLineChart(
             ></span>
 
             <span>'
-                . htmlspecialchars((string) $seriesName)
+                . htmlspecialchars((string) $year)
                 . '
             </span>
         </span>';
+
+        $legendIndex++;
     }
 
     $svg .= '</div>';

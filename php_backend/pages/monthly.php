@@ -367,7 +367,7 @@ $monthlyChart = buildMonthlyBarChart(
 
                     <span>Location</span>
 
-                    <select name="location">
+                    <select name="location" onchange="this.form.submit()">
 
                         <?php foreach ($locations as $item): ?>
 
@@ -390,7 +390,7 @@ $monthlyChart = buildMonthlyBarChart(
 
                     <span>Year</span>
 
-                    <select name="year">
+                    <select name="year" onchange="this.form.submit()">
 
                         <?php foreach ($availableYears as $availableYear): ?>
 
@@ -408,13 +408,6 @@ $monthlyChart = buildMonthlyBarChart(
                     </select>
 
                 </label>
-
-                <button
-                    type="submit"
-                    class="primary-btn monthly-apply-button"
-                >
-                    Apply
-                </button>
 
             </form>
 
@@ -538,6 +531,23 @@ $monthlyChart = buildMonthlyBarChart(
     </main>
 
 </div>
+    <script>
+    window.addEventListener("beforeunload", function () {
+        sessionStorage.setItem(
+            "scrollPosition",
+            window.scrollY
+        );
+    });
+
+    window.addEventListener("load", function () {
+        const y = sessionStorage.getItem("scrollPosition");
+
+        if (y !== null) {
+            window.scrollTo(0, parseInt(y));
+            sessionStorage.removeItem("scrollPosition");
+        }
+    });
+    </script>
 
 </body>
 </html>

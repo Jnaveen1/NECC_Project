@@ -37,13 +37,21 @@ a {
 }
 
 .sidebar {
-    width: 250px;
-    background: var(--sidebar);
-    color: #fff;
-    padding: 24px 18px;
-    min-height: 100vh;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+
+    width: 250px;
+    height: 100vh;
+    min-height: 100vh;
+
+    padding: 24px 18px;
+
+    background: var(--sidebar);
+    color: #ffffff;
+
+    overflow-y: auto;
+    z-index: 1000;
 }
 
 .brand-block {
@@ -54,14 +62,14 @@ a {
 }
 
 .brand-badge {
-    width: 42px;
+    width: 55px;
     height: 42px;
     border-radius: 12px;
     display: grid;
     place-items: center;
     font-weight: 700;
     background: linear-gradient(135deg, #60a5fa, #2563eb);
-    color: white;
+    color: #ffffff;
 }
 
 .brand-block h2 {
@@ -476,7 +484,9 @@ input {
 
 @media (max-width: 620px) {
     .main-panel {
-        padding: 16px;
+        width: 100%;
+        margin-left: 0;
+        padding: 20px;
     }
 
     .summary-grid,
@@ -1091,9 +1101,12 @@ input {
 }
 
 .main-panel {
-    width: 100%;
+    width: calc(100% - 250px);
     min-width: 0;
+    min-height: 100vh;
     max-width: 100%;
+    margin-left: 250px;
+    padding: 28px;
     overflow-x: hidden;
 }
 
